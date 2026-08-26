@@ -1,1 +1,24 @@
-// app global css
+.bg-barrel {
+  background-color: $barrel;
+}
+
+.bg-barrel-light {
+  background-color: $barrel-light;
+}
+
+.text-foam {
+  color: $foam;
+}
+
+.text-cream {
+  color: $cream;
+}
+
+.text-gold {
+  color: $gold;
+}
+
+body {
+  background-image: url('../assets/barrel_side.png');
+  background-repeat: repeat; // pour une texture qui se répète en motif
+}

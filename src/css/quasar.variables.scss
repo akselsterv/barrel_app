@@ -1,25 +1,40 @@
-// Quasar Sass (& SCSS) Variables
-// --------------------------------------------------
-// To customize the look and feel of this app, you can override
-// the Sass/SCSS variables found in Quasar's source Sass/SCSS files.
+// ===============================
+// BEER BARREL THEME
+// ===============================
 
-// Check documentation for full list of Quasar variables
+// Couleurs principales
+$primary: #C9822E;        // Ambre / bière
+$secondary: #8B5A2B;      // Bois du tonneau
+$accent: #efc470;         // Mousse / bière blonde
 
-// Your own variables (that are declared here) and Quasar's own
-// ones will be available out of the box in your .vue/.scss/.sass files
+// Mode sombre
+$dark: #2A1A12;           // Bois très foncé
+$dark-page: #3D2618;      // Fond brun principal
 
-// It's highly recommended to change the default colors
-// to match your app's branding.
-// Tip: Use the "Theme Builder" on Quasar's documentation website.
+// États
+$positive: #7A9B4A;       // Vert houblon
+$negative: #B84436;       // Rouge bière brune
+$info: #5D9DB5;           // Bleu désaturé
+$warning: #E0952F;        // Orange ambré
 
-$primary: #1976d2;
-$secondary: #26a69a;
-$accent: #9c27b0;
+// ===============================
+// COULEURS PERSONNALISÉES
+// ===============================
 
-$dark: #1d1d1d;
-$dark-page: #121212;
+// Fond et surfaces
+$barrel: #4A2C1A;         // Bois du tonneau
+$barrel-light: #6B4226;   // Bois plus clair
+$barrel-dark: #2F1B12;    // Bois très foncé
 
-$positive: #21ba45;
-$negative: #c10015;
-$info: #31ccec;
-$warning: #f2c037;
+// Bières
+$beer-gold: #E6A23C;      // Bière dorée
+$beer-amber: #C96B1F;     // Bière ambrée
+$beer-dark: #5C3218;      // Bière brune
+
+// Mousse et texte
+$foam: #F7E8C5;           // Mousse de bière
+$cream: #E8D8B8;          // Texte secondaire
+
+// Détails
+$wood-border: #7A4A2B;    // Bordures bois
+$gold: #D6A84D;           // Récompenses / classement

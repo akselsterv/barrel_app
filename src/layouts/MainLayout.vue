@@ -1,92 +1,101 @@
+<!-- src/layouts/MainLayout.vue -->
+
 <template>
-  <q-layout view="lHh Lpr lFf">
-    <q-header elevated>
-      <q-toolbar>
-        <q-btn
-          flat
-          dense
-          round
-          icon="menu"
-          aria-label="Menu"
-          @click="toggleLeftDrawer"
-        />
+  <q-layout view="lHh Lpr lFf" class="main-layout">
 
-        <q-toolbar-title> Quasar App </q-toolbar-title>
-
-        <div>Quasar v{{ $q.version }}</div>
-      </q-toolbar>
-    </q-header>
-
-    <q-drawer v-model="leftDrawerOpen" show-if-above bordered>
-      <q-list>
-        <q-item-label header> Essential Links </q-item-label>
-
-        <EssentialLink
-          v-for="link in linksList"
-          :key="link.label"
-          v-bind="link"
-        />
-      </q-list>
-    </q-drawer>
-
+    <!-- Contenu des pages -->
     <q-page-container>
-      <router-view />
+      <router-view v-slot="{ Component }">
+        <transition name="slide" mode="out-in">
+          <component :is="Component" />
+        </transition>
+      </router-view>
     </q-page-container>
+
+    <!-- Navigation basse -->
+    <q-footer elevated class="bottom-navigation">
+      <q-tabs
+        active-color="accent"
+        indicator-color="accent"
+        align="justify"
+        class="navigation-tabs"
+      >
+        <q-route-tab
+          to="/boissons"
+          icon="local_bar"
+          label="Boissons"
+        />
+
+        <q-route-tab
+          to="/"
+          icon="home"
+          label="Accueil"
+          exact
+        />
+
+        <q-route-tab
+          to="/classement"
+          icon="emoji_events"
+          label="Classement"
+        />
+
+        <q-route-tab
+          to="/profil"
+          icon="person"
+          label="Profil"
+        />
+      </q-tabs>
+    </q-footer>
+
   </q-layout>
 </template>
 
-<script setup>
-import { ref } from 'vue'
-import EssentialLink from '@/components/EssentialLink.vue'
-
-const linksList = [
-  {
-    label: 'Docs',
-    caption: 'quasar.dev',
-    icon: 'school',
-    link: 'https://quasar.dev'
-  },
-  {
-    label: 'GitHub',
-    caption: 'github.com/quasarframework',
-    icon: 'code',
-    link: 'https://github.com/quasarframework'
-  },
-  {
-    label: 'Discord Chat Channel',
-    caption: 'chat.quasar.dev',
-    icon: 'chat',
-    link: 'https://chat.quasar.dev'
-  },
-  {
-    label: 'Forum',
-    caption: 'forum.quasar.dev',
-    icon: 'record_voice_over',
-    link: 'https://forum.quasar.dev'
-  },
-  {
-    label: 'Twitter',
-    caption: '@quasarframework',
-    icon: 'rss_feed',
-    link: 'https://twitter.quasar.dev'
-  },
-  {
-    label: 'Facebook',
-    caption: '@QuasarFramework',
-    icon: 'public',
-    link: 'https://facebook.quasar.dev'
-  },
-  {
-    label: 'Quasar Awesome',
-    caption: 'Community Quasar projects',
-    icon: 'favorite',
-    link: 'https://awesome.quasar.dev'
-  }
-]
-
-const leftDrawerOpen = ref(false)
-
-function toggleLeftDrawer() {
-  leftDrawerOpen.value = !leftDrawerOpen.value
+<style lang="scss" scoped>
+.main-layout {
+  background: $dark-page;
+  min-height: 100vh;
 }
-</script>
+
+.bottom-navigation {
+  background: $barrel-dark;
+  border-top: 1px solid $wood-border;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.navigation-tabs {
+  color: $cream;
+}
+
+.navigation-tabs :deep(.q-tab--active) {
+  color: $accent;
+}
+
+.navigation-tabs :deep(.q-tab) {
+  min-height: 64px;
+}
+
+.navigation-tabs :deep(.q-icon) {
+  font-size: 25px;
+}
+
+.slide-enter-active,
+.slide-leave-active {
+  transition: transform 0.25s ease, opacity 0.25s ease;
+}
+
+.slide-enter-from {
+  transform: translateX(100%);
+  opacity: 0;
+}
+
+.slide-leave-to {
+  transform: translateX(-100%);
+  opacity: 0;
+}
+
+.q-layout {
+  background-image: url('src/assets/barrel_side.png');
+  background-repeat: repeat;
+}
+
+</style>

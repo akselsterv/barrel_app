@@ -34,5 +34,19 @@ export default defineRouter((/* { store, ssrContext } */) => {
     history: createHistory(import.meta.env.QUASAR_VUE_ROUTER_BASE)
   })
 
+  Router.beforeEach((to, from, next) => {
+    const utilisateur = localStorage.getItem('utilisateur')
+
+    if (!utilisateur && to.path !== '/setup') {
+      // Pas d'utilisateur en local ET on n'est pas déjà sur /setup → on redirige
+      next('/setup')
+    } else if (utilisateur && to.path === '/setup') {
+      // Déjà un utilisateur mais on essaie d'aller sur /setup → on renvoie à l'accueil
+      next('/')
+    } else {
+      next()
+    }
+  })
+
   return Router
 })
