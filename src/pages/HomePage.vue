@@ -111,8 +111,6 @@ import { ref, computed} from 'vue'
 
 const taux = ref(0.163)
 
-// Taux à partir duquel la bière est considérée "pleine" (100%)
-// Ajuste cette valeur selon l'échelle que tu veux (ex: 1.5 = zone dangereuse)
 const tauxMax = ref(0.3)
 
 const tempsAvantDeConduire = ref(120)
