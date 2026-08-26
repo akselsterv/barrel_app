@@ -51,14 +51,21 @@
 </template>
 
 <style lang="scss" scoped>
+
 .main-layout {
-  background: $dark-page;
-  min-height: 100vh;
+  width: 100%;
+  min-height: 100dvh;
+  background: transparent;
 }
+
+/* =========================
+   NAVIGATION BASSE
+   ========================= */
 
 .bottom-navigation {
   background: $barrel-dark;
   border-top: 1px solid $wood-border;
+
   padding-bottom: env(safe-area-inset-bottom);
 }
 
@@ -78,9 +85,16 @@
   font-size: 25px;
 }
 
+
+/* =========================
+   TRANSITION DES PAGES
+   ========================= */
+
 .slide-enter-active,
 .slide-leave-active {
-  transition: transform 0.25s ease, opacity 0.25s ease;
+  transition:
+    transform 0.25s ease,
+    opacity 0.25s ease;
 }
 
 .slide-enter-from {
@@ -91,11 +105,6 @@
 .slide-leave-to {
   transform: translateX(-100%);
   opacity: 0;
-}
-
-.q-layout {
-  background-image: url('src/assets/barrel_side.png');
-  background-repeat: repeat;
 }
 
 </style>

@@ -108,8 +108,12 @@ async function creerUtilisateur() {
 
 <style scoped lang="scss">
 .setup-page {
-  min-height: 100vh;
-  padding: 24px;
+  min-height: 100dvh;
+  padding: 24px 16px 120px;
+  padding-top: calc(24px + env(safe-area-inset-top));
+  padding-right: calc(16px + env(safe-area-inset-right));
+  padding-bottom: calc(120px + env(safe-area-inset-bottom));
+  padding-left: calc(16px + env(safe-area-inset-left));
   background-image: url('src/assets/barrel_side.png');
   background-repeat: repeat;
 }

@@ -213,11 +213,6 @@ const volumeDuType = computed(() => {
   return volumes[nouvelleBoisson.value.type] ?? 33
 })
 
-/*
-|--------------------------------------------------------------------------
-| UTILISATEUR LOCAL
-|--------------------------------------------------------------------------
-*/
 
 const utilisateur = computed(() => {
   const utilisateurLocal = localStorage.getItem('utilisateur')
@@ -237,12 +232,6 @@ const utilisateur = computed(() => {
     return null
   }
 })
-
-/*
-|--------------------------------------------------------------------------
-| CHARGER LES CONSOMMATIONS
-|--------------------------------------------------------------------------
-*/
 
 async function chargerBoissons() {
   loading.value = true
@@ -287,12 +276,6 @@ async function chargerBoissons() {
     }
   })
 }
-
-/*
-|--------------------------------------------------------------------------
-| ICONES
-|--------------------------------------------------------------------------
-*/
 
 function getIcon(type) {
   const icons = {
@@ -477,8 +460,12 @@ onMounted(() => {
 */
 
 .boissons-page {
-  min-height: 100vh;
-  padding: 24px 16px 150px;
+  min-height: 100dvh;
+  padding: 24px 16px 120px;
+  padding-top: calc(24px + env(safe-area-inset-top));
+  padding-right: calc(16px + env(safe-area-inset-right));
+  padding-bottom: calc(120px + env(safe-area-inset-bottom));
+  padding-left: calc(16px + env(safe-area-inset-left));
 }
 
 /*

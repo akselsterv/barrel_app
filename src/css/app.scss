@@ -18,6 +18,34 @@
   color: $gold;
 }
 
+html,
+body,
+#q-app {
+  width: 100%;
+  min-height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+}
+
+html,
+body,
+#q-app {
+  margin: 0;
+  padding: 0;
+  background: $barrel-dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+input,
+textarea,
+select {
+  font-size: 16px !important;
+}
+
 body {
   background-image: url('../assets/barrel_side.png');
   background-repeat: repeat; // pour une texture qui se répète en motif
