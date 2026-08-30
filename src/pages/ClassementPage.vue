@@ -1,3 +1,4 @@
+```vue
 <template>
   <q-page class="classement-page">
 
@@ -12,8 +13,17 @@
       </div>
     </div>
 
+    <!-- CHARGEMENT -->
+    <div
+      v-if="loading"
+      class="loading"
+    >
+      Chargement du classement...
+    </div>
+
     <!-- LIGUES -->
     <div
+      v-else
       v-for="ligue in ligues"
       :key="ligue.id"
       class="league"
@@ -21,6 +31,7 @@
 
       <!-- HEADER LIGUE -->
       <div class="league-header">
+
         <div>
           <div class="league-name">
             {{ ligue.nom }}
@@ -34,6 +45,7 @@
         <div class="league-icon">
           {{ ligue.icon }}
         </div>
+
       </div>
 
       <!-- JOUEURS -->
@@ -56,10 +68,23 @@
 
           <!-- POSITION -->
           <div class="position">
-            <span v-if="index === 0">🥇</span>
-            <span v-else-if="index === 1">🥈</span>
-            <span v-else-if="index === 2">🥉</span>
-            <span v-else>{{ index + 1 }}</span>
+
+            <span v-if="index === 0">
+              🥇
+            </span>
+
+            <span v-else-if="index === 1">
+              🥈
+            </span>
+
+            <span v-else-if="index === 2">
+              🥉
+            </span>
+
+            <span v-else>
+              {{ index + 1 }}
+            </span>
+
           </div>
 
           <!-- AVATAR -->
@@ -67,71 +92,69 @@
             size="42px"
             class="avatar"
           >
-            {{ joueur.pseudo.charAt(0).toUpperCase() }}
+            {{
+              joueur.pseudo
+                ? joueur.pseudo.charAt(0).toUpperCase()
+                : '?'
+            }}
           </q-avatar>
 
           <!-- INFOS JOUEUR -->
           <div class="player-info">
+
             <div class="pseudo">
               {{ joueur.pseudo }}
             </div>
 
             <div class="points">
-              {{ joueur.pt }} points
+              {{ Number(joueur.pt) || 0 }} points
             </div>
+
           </div>
 
         </div>
 
       </q-card>
+
     </div>
 
   </q-page>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import { supabase } from '@/services/supabase.js' // adapte le chemin si nécessaire
 
-// Liste de tous les utilisateurs
+import {
+  ref,
+  onMounted
+} from 'vue'
+
+import {
+  supabase
+} from '@/services/supabase.js'
+
+/*
+|--------------------------------------------------------------------------
+| LIGUES
+|--------------------------------------------------------------------------
+|
+| Une seule source pour les ligues :
+| src/data/ligues.js
+|
+*/
+
+import {
+  ligues,
+  calculerLigue
+} from '@/data/ligues.js'
+
+
+// ========================================
+// UTILISATEURS
+// ========================================
+
 const lst_utilisateurs = ref([])
 
-// État de chargement
 const loading = ref(false)
-
-// Définition des ligues
-const ligues = [
-  {
-    id: 1,
-    nom: 'Ligue 1',
-    description: 'Les légendes de la bière',
-    icon: '🏆'
-  },
-  {
-    id: 2,
-    nom: 'Ligue 2',
-    description: 'Les grands amateurs',
-    icon: '🥇'
-  },
-  {
-    id: 3,
-    nom: 'Ligue 3',
-    description: 'Les habitués du bar',
-    icon: '🥈'
-  },
-  {
-    id: 4,
-    nom: 'Ligue 4',
-    description: 'Les apprentis',
-    icon: '🥉'
-  },
-  {
-    id: 5,
-    nom: 'Ligue 5',
-    description: 'Les nouveaux arrivants',
-    icon: '🍺'
-  }
-]
 
 
 // ========================================
@@ -139,32 +162,67 @@ const ligues = [
 // ========================================
 
 async function chargerUtilisateurs() {
+
   loading.value = true
 
-  const { data, error } = await supabase
-    .from('utilisateurs')
-    .select(`
-      id,
-      pseudo,
-      pt,
-      ligue
-    `)
-    .order('pt', {
-      ascending: false
-    })
+  try {
 
-  loading.value = false
+    const {
+      data,
+      error
+    } = await supabase
+      .from('utilisateurs')
+      .select(`
+        id,
+        pseudo,
+        pt,
+        ligue
+      `)
+      .neq(
+        'pseudo',
+        'admin'
+      )
+      .order(
+        'pt',
+        {
+          ascending: false
+        }
+      )
 
-  if (error) {
+    if (error) {
+
+      console.error(
+        'Erreur chargement utilisateurs :',
+        error
+      )
+
+      lst_utilisateurs.value = []
+
+      return
+    }
+
+    lst_utilisateurs.value =
+      data || []
+
+    console.log(
+      'Utilisateurs chargés :',
+      lst_utilisateurs.value
+    )
+
+  } catch (error) {
+
     console.error(
-      'Erreur chargement utilisateurs :',
+      'Erreur inattendue chargement classement :',
       error
     )
 
-    return
-  }
+    lst_utilisateurs.value = []
 
-  lst_utilisateurs.value = data || []
+  } finally {
+
+    loading.value = false
+
+  }
 }
 
 
@@ -173,33 +231,74 @@ async function chargerUtilisateurs() {
 // ========================================
 
 function joueursParLigue(ligueId) {
+
   return lst_utilisateurs.value
-    .filter(joueur => Number(joueur.ligue) === ligueId)
-    .sort((a, b) => Number(b.pt) - Number(a.pt))
+    .filter(joueur => {
+
+      const points = Number(joueur.pt) || 0
+
+      const ligueCalculee =
+        calculerLigue(points)
+
+      return Number(ligueCalculee) ===
+        Number(ligueId)
+
+    })
+    .sort(
+      (a, b) =>
+        Number(b.pt || 0) -
+        Number(a.pt || 0)
+    )
 }
 
-
 // ========================================
-// CHARGEMENT AU MONTAGE
+// CHARGEMENT
 // ========================================
 
 onMounted(() => {
+
   chargerUtilisateurs()
+
 })
+
 </script>
 
 <style scoped lang="scss">
 
 .classement-page {
-  min-height: 100dvh;
-  padding: 24px 16px 120px;
-  padding-top: calc(24px + env(safe-area-inset-top));
-  padding-right: calc(16px + env(safe-area-inset-right));
-  padding-bottom: calc(120px + env(safe-area-inset-bottom));
-  padding-left: calc(16px + env(safe-area-inset-left));
+  min-height: 100vh;
+
+  padding: 24px 16px 140px;
+
+  padding-top:
+    calc(
+      24px +
+      env(safe-area-inset-top)
+    );
+
+  padding-right:
+    calc(
+      16px +
+      env(safe-area-inset-right)
+    );
+
+  padding-bottom:
+    calc(
+      120px +
+      env(safe-area-inset-bottom)
+    );
+
+  padding-left:
+    calc(
+      16px +
+      env(safe-area-inset-left)
+    );
 }
 
-/* TITRE */
+
+/* ========================================
+   TITRE
+======================================== */
 
 .page-title {
   margin-bottom: 30px;
@@ -218,7 +317,20 @@ onMounted(() => {
 }
 
 
-/* LIGUE */
+/* ========================================
+   CHARGEMENT
+======================================== */
+
+.loading {
+  padding: 40px 20px;
+  text-align: center;
+  color: $cream;
+}
+
+
+/* ========================================
+   LIGUE
+======================================== */
 
 .league {
   margin-bottom: 28px;
@@ -231,11 +343,17 @@ onMounted(() => {
 
   background: $barrel;
 
-  border-radius: 16px 16px 0 0;
+  border-radius:
+    16px
+    16px
+    0
+    0;
 
   padding: 16px 18px;
 
-  border-bottom: 1px solid $wood-border;
+  border-bottom:
+    1px solid
+    $wood-border;
 }
 
 .league-name {
@@ -255,18 +373,26 @@ onMounted(() => {
 }
 
 
-/* LISTE */
+/* ========================================
+   LISTE
+======================================== */
 
 .players-card {
   background: $barrel-dark;
 
-  border-radius: 0 0 16px 16px;
+  border-radius:
+    0
+    0
+    16px
+    16px;
 
   overflow: hidden;
 }
 
 
-/* JOUEUR */
+/* ========================================
+   JOUEUR
+======================================== */
 
 .player {
   display: flex;
@@ -276,7 +402,9 @@ onMounted(() => {
 
   padding: 10px 14px;
 
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom:
+    1px solid
+    rgba(255, 255, 255, 0.05);
 }
 
 .player:last-child {
@@ -284,7 +412,9 @@ onMounted(() => {
 }
 
 
-/* POSITION */
+/* ========================================
+   POSITION
+======================================== */
 
 .position {
   width: 35px;
@@ -294,11 +424,14 @@ onMounted(() => {
   color: $cream;
 
   font-size: 15px;
+
   font-weight: bold;
 }
 
 
-/* AVATAR */
+/* ========================================
+   AVATAR
+======================================== */
 
 .avatar {
   margin: 0 12px;
@@ -311,7 +444,9 @@ onMounted(() => {
 }
 
 
-/* INFOS JOUEUR */
+/* ========================================
+   INFOS JOUEUR
+======================================== */
 
 .player-info {
   flex: 1;
@@ -334,7 +469,9 @@ onMounted(() => {
 }
 
 
-/* AUCUN JOUEUR */
+/* ========================================
+   AUCUN JOUEUR
+======================================== */
 
 .no-player {
   padding: 25px 15px;
@@ -347,3 +484,4 @@ onMounted(() => {
 }
 
 </style>
+```

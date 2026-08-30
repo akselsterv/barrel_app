@@ -110,7 +110,6 @@
             :model-value="volumeDuType"
             label="Volume"
             suffix="cl"
-            readonly
             dark
             outlined
             class="form-input"
