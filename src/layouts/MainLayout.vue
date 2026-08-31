@@ -75,64 +75,82 @@
 </template>
 
 <script setup>
-  import {
-    ref,
-    onMounted,
-  } from 'vue'
+import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { supabase } from '@/services/supabase'
 
-  import { supabase } from '@/services/supabase'
+const dialogNotification = ref(false)
+const notificationTexte = ref('')
 
-  onMounted(() => {
-    verifierNotification()
-  })
+const NOTIFICATION_STORAGE_KEY = 'derniere_notification_vue'
 
-  /* ==========================================================================
-  * NOTIFICATION
-  *
-  * À l'ouverture de l'app, on regarde s'il existe une notification
-  * active (statut = true) dans la table "notification" et on l'affiche
-  * dans un dialog avec son texte.
-  * ========================================================================== */
+async function verifierNotification() {
+  try {
+    const { data, error } = await supabase
+      .from('notification')
+      .select('statut, text')
+      .eq('statut', true)
+      .limit(1)
+      .maybeSingle()
 
-  const dialogNotification = ref(false)
-
-  const notificationTexte = ref('')
-
-  async function verifierNotification() {
-    try {
-      const {
-        data,
-        error
-      } = await supabase
-        .from('notification')
-        .select('statut, text')
-        .eq('statut', true)
-        .limit(1)
-        .maybeSingle()
-
-      if (error) {
-        console.error(
-          'Erreur chargement notification :',
-          error
-        )
-
-        return
-      }
-
-      if (data?.statut) {
-        notificationTexte.value = data.text || ''
-        console.log(notificationTexte.value)
-        dialogNotification.value = true
-      }
-    } catch (error) {
-      console.error(
-        'Erreur inattendue notification :',
-        error
-      )
+    if (error) {
+      console.error('Erreur chargement notification :', error)
+      return
     }
-  }
-</script>
 
+    if (!data?.statut || !data?.text) {
+      return
+    }
+
+    const nouveauTexte = data.text.trim()
+    const dernierTexteVu = localStorage.getItem(
+      NOTIFICATION_STORAGE_KEY
+    )
+
+    // Même notification déjà vue → rien
+    if (dernierTexteVu === nouveauTexte) {
+      return
+    }
+
+    // Nouvelle notification
+    notificationTexte.value = nouveauTexte
+    dialogNotification.value = true
+
+    // On mémorise qu'elle a été vue
+    localStorage.setItem(
+      NOTIFICATION_STORAGE_KEY,
+      nouveauTexte
+    )
+
+  } catch (error) {
+    console.error('Erreur inattendue notification :', error)
+  }
+}
+
+// Quand l'app est lancée
+onMounted(() => {
+  verifierNotification()
+
+  // Quand l'utilisateur revient dans l'application
+  document.addEventListener(
+    'visibilitychange',
+    gererRetourApplication
+  )
+})
+
+// Quand l'utilisateur quitte puis revient dans l'app
+function gererRetourApplication() {
+  if (document.visibilityState === 'visible') {
+    verifierNotification()
+  }
+}
+
+onBeforeUnmount(() => {
+  document.removeEventListener(
+    'visibilitychange',
+    gererRetourApplication
+  )
+})
+</script>
 <style lang="scss" scoped>
 
 .main-layout {

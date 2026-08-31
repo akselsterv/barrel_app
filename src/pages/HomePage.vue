@@ -11,7 +11,7 @@
 
       <div class="header-content">
         <div class="taux">
-          {{ taux.toFixed(3) }} g/L
+          {{ (taux).toFixed(3) }} g/L
         </div>
 
         <div class="subtitle">
@@ -91,13 +91,24 @@
 
           <q-space />
 
-          <button
+          <div
             v-if="peutSupprimer(item)"
-            class="delete-btn"
-            @click.stop="supprimerConsommation(item)"
+            class="conso-actions"
           >
-            ✕
-          </button>
+            <button
+              class="edit-heure-btn"
+              @click.stop="ouvrirHeureDialog(item)"
+            >
+              <q-icon name="schedule" size="16px" />
+            </button>
+
+            <button
+              class="delete-btn"
+              @click.stop="supprimerConsommation(item)"
+            >
+              ✕
+            </button>
+          </div>
         </q-card-section>
       </q-card>
 
@@ -215,6 +226,47 @@
             label="Valider"
             class="price-validate"
             @click="validerPrix"
+          />
+        </q-card-section>
+      </q-card>
+    </q-dialog>
+
+    <!-- DIALOG HEURE -->
+    <q-dialog v-model="dialogHeure">
+      <q-card class="price-dialog">
+        <q-card-section>
+          <div class="dialog-title">
+            Heure de "{{ consoPourHeure?.conso?.nom }}"
+          </div>
+        </q-card-section>
+
+        <q-card-section>
+          <q-input
+            v-model="heureSaisie"
+            type="time"
+            outlined
+            dense
+            dark
+            label="Heure de consommation"
+            class="price-input"
+          />
+        </q-card-section>
+
+        <q-card-section class="price-actions">
+          <q-btn
+            flat
+            rounded
+            label="Annuler"
+            class="none-button"
+            @click="dialogHeure = false"
+          />
+
+          <q-btn
+            unelevated
+            rounded
+            label="Valider"
+            class="price-validate"
+            @click="validerHeure"
           />
         </q-card-section>
       </q-card>
@@ -507,15 +559,6 @@ async function ajouterPoints(points) {
   }
 
   try {
-    console.log(
-      'Tentative ajout de points :',
-      pointsAjoutes
-    )
-
-    console.log(
-      'Utilisateur concerné :',
-      utilisateur.id
-    )
 
     /* ----------------------------------------------------------------------
      * APPEL DE LA FONCTION SUPABASE (RPC) "ajouter_points_utilisateur"
@@ -577,20 +620,6 @@ async function ajouterPoints(points) {
       JSON.stringify(utilisateur)
     )
 
-    console.log(
-      'Points enregistrés avec succès.'
-    )
-
-    console.log(
-      'Total points :',
-      utilisateur.pt
-    )
-
-    console.log(
-      'Ligue :',
-      utilisateur.ligue
-    )
-
     return true
 
   } catch (error) {
@@ -650,11 +679,6 @@ async function ajouterConsommation(consoCatalogue) {
       date.toISOString()
   }
 
-  console.log(
-    'Nouvelle consommation :',
-    conso
-  )
-
   /* ------------------------------------------------------------------------
    * AJOUT CONSOMMATION EN COURS
    * ------------------------------------------------------------------------ */
@@ -691,11 +715,6 @@ async function ajouterConsommation(consoCatalogue) {
 
   const pointsGagnes =
     calculerPoints(conso)
-
-  console.log(
-    'Points gagnés :',
-    pointsGagnes
-  )
 
   /* ------------------------------------------------------------------------
    * AJOUT DES POINTS
@@ -804,10 +823,6 @@ function resetTaux() {
     STORAGE_KEY_TAUX_MAX,
     '0'
   )
-
-  console.log(
-    'Taux réinitialisé.'
-  )
 }
 
 /* ==========================================================================
@@ -822,6 +837,22 @@ function formatHeure(date) {
       minute: '2-digit'
     }
   )
+}
+
+function formatHeureInput(date) {
+  const d = new Date(date)
+
+  const hh = d
+    .getHours()
+    .toString()
+    .padStart(2, '0')
+
+  const mm = d
+    .getMinutes()
+    .toString()
+    .padStart(2, '0')
+
+  return `${hh}:${mm}`
 }
 
 function formatPrix(prix) {
@@ -920,25 +951,171 @@ function validerPrix() {
 }
 
 /* ==========================================================================
+ * HEURE
+ *
+ * Modification de l'heure d'une consommation, uniquement possible
+ * tant que la conso peut être supprimée (< 5 min après ajout, cf.
+ * peutSupprimer). Met à jour à la fois la conso active (heure,
+ * objet Date) et le 2ème élément du tuple [conso, dateISO, prix]
+ * correspondant dans l'historique.
+ * ========================================================================== */
+
+const dialogHeure = ref(false)
+
+const consoPourHeure = ref(null)
+
+const heureSaisie = ref('')
+
+function ouvrirHeureDialog(item) {
+  if (!peutSupprimer(item)) {
+    return
+  }
+
+  consoPourHeure.value = item
+
+  heureSaisie.value =
+    formatHeureInput(item.heure)
+
+  dialogHeure.value = true
+}
+
+function validerHeure() {
+  if (!consoPourHeure.value) {
+    dialogHeure.value = false
+    return
+  }
+
+  const match =
+    /^(\d{2}):(\d{2})$/.exec(
+      heureSaisie.value || ''
+    )
+
+  if (!match) {
+    dialogHeure.value = false
+    return
+  }
+
+  const heures = Number(match[1])
+  const minutes = Number(match[2])
+
+  const item = consoPourHeure.value
+
+  const nouvelleDate =
+    new Date(item.heure)
+
+  nouvelleDate.setHours(
+    heures,
+    minutes,
+    0,
+    0
+  )
+
+  /* ------------------------------------------------------------------------
+   * MISE À JOUR CONSOMMATION ACTIVE
+   * ------------------------------------------------------------------------ */
+
+  item.heure = nouvelleDate
+
+  /* ------------------------------------------------------------------------
+   * MISE À JOUR HISTORIQUE
+   * ------------------------------------------------------------------------ */
+
+  const historique =
+    lireHistorique()
+
+  const idLocal = item.id
+
+  const nouvelHistorique =
+    historique.map(tuple => {
+      if (!Array.isArray(tuple)) {
+        return tuple
+      }
+
+      const [
+        conso,
+        ,
+        prix
+      ] = tuple
+
+      if (
+        conso?.local_id === idLocal
+      ) {
+        return [
+          conso,
+          nouvelleDate.toISOString(),
+          prix
+        ]
+      }
+
+      return tuple
+    })
+
+  sauvegarderHistorique(
+    nouvelHistorique
+  )
+
+  dialogHeure.value = false
+}
+
+/* ==========================================================================
  * HORLOGE
+ *
+ * "maintenant" doit toujours refléter l'heure réelle, y compris
+ * juste après réouverture / retour au premier plan de l'app : les
+ * navigateurs (surtout mobile) throttle ou suspendent carrément le
+ * setInterval quand l'app est en arrière-plan ou l'écran verrouillé,
+ * donc on force un recalcul immédiat au montage ET à chaque retour
+ * de visibilité, plutôt que d'attendre le prochain tick de 15s.
  * ========================================================================== */
 
 let interval = null
 
+function actualiserMaintenant() {
+  maintenant.value = Date.now()
+}
+
+function gererChangementVisibilite() {
+  if (document.visibilityState === 'visible') {
+    actualiserMaintenant()
+  }
+}
+
 onMounted(() => {
   restaurerConsommationsEnCours()
+
+  actualiserMaintenant()
 
   chargerCatalogue()
 
   interval = setInterval(() => {
-    maintenant.value = Date.now()
+    actualiserMaintenant()
   }, 15000)
+
+  document.addEventListener(
+    'visibilitychange',
+    gererChangementVisibilite
+  )
+
+  window.addEventListener(
+    'pageshow',
+    actualiserMaintenant
+  )
 })
 
 onUnmounted(() => {
   if (interval) {
     clearInterval(interval)
   }
+
+  document.removeEventListener(
+    'visibilitychange',
+    gererChangementVisibilite
+  )
+
+  window.removeEventListener(
+    'pageshow',
+    actualiserMaintenant
+  )
 })
 
 /* ==========================================================================
@@ -1327,6 +1504,12 @@ const remplissage = computed(() => {
 }
 
 .conso-time {
+  display: flex;
+
+  align-items: center;
+
+  gap: 6px;
+
   color: $cream;
 
   font-size: 14px;
@@ -1334,13 +1517,34 @@ const remplissage = computed(() => {
   margin-top: 4px;
 }
 
-.conso-prix {
-  color: $beer-amber;
+/* ==========================================================================
+ * ACTIONS (heure / suppression)
+ *
+ * Les deux boutons partagent un gabarit commun mais sont volontairement
+ * différenciés : l'édition de l'heure est une action neutre (teinte
+ * ambre du thème, sur le modèle de .conso-prix), la suppression reste
+ * seule à porter la couleur d'alerte rouge, pour qu'on ne les confonde
+ * pas au premier coup d'oeil.
+ * ========================================================================== */
 
-  font-weight: bold;
+.conso-actions {
+  display: flex;
+
+  align-items: center;
+
+  gap: 32px;
+
+  flex-shrink: 0;
 }
 
+.edit-heure-btn,
 .delete-btn {
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
   width: 30px;
 
   height: 30px;
@@ -1348,11 +1552,6 @@ const remplissage = computed(() => {
   border-radius: 50%;
 
   border: none;
-
-  background:
-    rgba(220, 53, 69, 0.15);
-
-  color: #dc3545;
 
   font-size: 14px;
 
@@ -1363,6 +1562,45 @@ const remplissage = computed(() => {
   cursor: pointer;
 
   flex-shrink: 0;
+
+  transition:
+    background-color 0.15s ease,
+    transform 0.1s ease;
+}
+
+.edit-heure-btn:active,
+.delete-btn:active {
+  transform: scale(0.92);
+}
+
+.edit-heure-btn {
+  background: rgba($beer-amber, 0.16);
+
+  border: 1px solid rgba($beer-amber, 0.35);
+
+  color: $beer-amber;
+}
+
+.edit-heure-btn:hover {
+  background: rgba($beer-amber, 0.26);
+}
+
+.conso-prix {
+  color: $beer-amber;
+
+  font-weight: bold;
+}
+
+.delete-btn {
+  background:
+    rgba(220, 53, 69, 0.15);
+
+  color: #dc3545;
+}
+
+.delete-btn:hover {
+  background:
+    rgba(220, 53, 69, 0.25);
 }
 
 .drink-button {
